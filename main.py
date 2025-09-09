@@ -7,11 +7,28 @@ from fastapi import FastAPI, UploadFile, File, Body, HTTPException
 import uvicorn
 import docx2txt
 import pdfplumber
+import uvicorn
 
-from dotenv import load_dotenv
+# ---- Try to load secrets in multiple environments ----
+try:
+    import streamlit as st
+    ST_MODE = True
+except ImportError:
+    ST_MODE = False
 
-# Load variables from .env file
-load_dotenv()
+if ST_MODE and "OPENAI_API_KEY" in st.secrets:
+    # ✅ Streamlit Cloud secrets
+    PINECONE_API_KEY = st.secrets["PINECONE_API_KEY"]
+    OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
+    INDEX_NAME = st.secrets.get("PINECONE_INDEX_NAME", "candidates-db")
+else:
+    # ✅ Local dev: use dotenv or GitHub Actions (os.environ)
+    from dotenv import load_dotenv
+    load_dotenv()
+
+    PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+    INDEX_NAME = os.getenv("PINECONE_INDEX_NAME", "candidates-db")
 
 # ---- Logging ----
 logging.basicConfig(level=logging.DEBUG)
@@ -20,18 +37,11 @@ logging.basicConfig(level=logging.DEBUG)
 from openai import OpenAI
 from pinecone import Pinecone, ServerlessSpec
 
-# ---- API Keys ----
-PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
-print(f"PINECONE_API_KEY: {PINECONE_API_KEY}")
-print(f"OPENAI_API_KEY: {OPENAI_API_KEY}")
-
 # ---- Clients ----
 client = OpenAI(api_key=OPENAI_API_KEY)
 pc = Pinecone(api_key=PINECONE_API_KEY)
 
-INDEX_NAME = "candidates-db"
+# ---- Ensure Pinecone index ----
 if INDEX_NAME not in pc.list_indexes().names():
     pc.create_index(
         name=INDEX_NAME,
@@ -40,6 +50,7 @@ if INDEX_NAME not in pc.list_indexes().names():
         spec=ServerlessSpec(cloud="aws", region="us-east-1")
     )
 index = pc.Index(INDEX_NAME)
+
 
 # ---- FastAPI App ----
 app = FastAPI()
@@ -281,7 +292,6 @@ async def match_candidates(jd: dict):
     return scored
 
 
-
-# ---- Run Server ----
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)

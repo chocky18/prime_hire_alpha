@@ -4,7 +4,7 @@ import json
 import ast
 st.title("Resume Matcher (FastAPI + Streamlit)")
 
-backend_url = "http://127.0.0.1:8000"
+backend_url = "https://prime-hire-alpha.onrender.com"
 # Upload resume
 st.header("Upload Multiple Resumes")
 resume_files = st.file_uploader(

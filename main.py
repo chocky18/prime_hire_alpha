@@ -268,7 +268,6 @@ Skills: {skills or "Not specified"}
         }
     return jd
 
-
 def score_resume_vs_jd(resume_meta, jd):
     jd_skills = set([s.lower() for s in jd["skills"]])
     candidate_skills = set([s.lower() for s in resume_meta.get("skills", [])])

@@ -168,13 +168,81 @@ def extract_metadata(text: str):
 
 def generate_jd(role, years, location, skills=None):
     prompt = f"""
-    Write a Job Description in JSON format with keys:
-    role, years_experience, location, skills, responsibilities.
-    Role: {role}
-    Years: {years}
-    Location: {location}
-    Skills: {skills or "Not specified"}
-    """
+You are an expert technical recruiter. 
+Your task is to generate a Job Description (JD) in **strict JSON format** following the schema below:
+
+Schema:
+{{
+  "role": "<string>",
+  "years_experience": <int>,
+  "location": "<string>",
+  "skills": ["<string>", "<string>", ...],
+  "responsibilities": ["<string>", "<string>", ...]
+}}
+
+Guidelines:
+- Always return valid JSON (no explanations, no extra text).
+- Responsibilities should be 5–7 clear bullet points.
+- Skills should come from the input if provided, otherwise infer from the role.
+- Keep descriptions short and professional.
+
+---
+
+### Few-shot Examples
+
+Input:
+Role: Data Scientist
+Years Experience: 3
+Location: Bangalore
+Skills: "Python", "TensorFlow", "SQL", "Machine Learning"
+
+Output:
+{{
+  "role": "Data Scientist",
+  "years_experience": 3,
+  "location": "Bangalore",
+  "skills": ["Python", "TensorFlow", "SQL", "Machine Learning"],
+  "responsibilities": [
+    "Develop and deploy machine learning models",
+    "Perform data analysis and preprocessing",
+    "Collaborate with cross-functional teams to define requirements",
+    "Optimize models for scalability and performance",
+    "Prepare and present analytical reports to stakeholders"
+  ]
+}}
+
+---
+
+Input:
+Role: Backend Engineer
+Years Experience: 5
+Location: Remote
+Skills: "Node.js", "Express", "MongoDB", "Docker"
+
+Output:
+{{
+  "role": "Backend Engineer",
+  "years_experience": 5,
+  "location": "Remote",
+  "skills": ["Node.js", "Express", "MongoDB", "Docker"],
+  "responsibilities": [
+    "Design and maintain server-side applications",
+    "Implement RESTful APIs",
+    "Ensure database efficiency and security",
+    "Collaborate with frontend developers and product managers",
+    "Maintain CI/CD pipelines"
+  ]
+}}
+
+---
+
+Now generate the Job Description for:
+
+Role: {role}
+Years Experience: {years}
+Location: {location}
+Skills: {skills or "Not specified"}
+"""
     resp = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}],
